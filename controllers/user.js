@@ -3,7 +3,6 @@ const { decryptPass } = require('../helpers/bcrypt')
 const { generateToken } = require('../helpers/jwt')
 const { OAuth2Client } = require('google-auth-library')
 
-
 class Controller {
     static register (req, res, next ) {
         let { email, password } = req.body
@@ -67,7 +66,7 @@ class Controller {
         const client = new OAuth2Client(process.env.CLIENT_ID);
 
         client.verifyIdToken({
-            id_token: req.body.id_token,
+            idToken: req.body.id_token,
             audience: process.env.CLIENT_ID
         })
             .then( ticket => {
@@ -87,12 +86,12 @@ class Controller {
                     let token = generateToken(payload)
                     return res.status(200).json({
                         'access_token' : token,
-                        msg: 'Welcome Back, ' + data.email
+                        'msg': 'Welcome Back, ' + data.email
                     })
                 } else {
                     return User.create({
                         email,
-                        password: processs.env.DEFAULT_PASSWORD
+                        password: process.env.DEFAULT_PASSWORD
                     })
                         .then( newCreate => {
                             let payload = {
@@ -111,6 +110,7 @@ class Controller {
                 }
             })
             .catch( err => {
+                console.log('==============GOOGLE===============')
                 return next(err)
             })
     }
