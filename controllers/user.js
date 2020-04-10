@@ -110,7 +110,6 @@ class Controller {
                 }
             })
             .catch( err => {
-                console.log('==============GOOGLE===============')
                 return next(err)
             })
     }
