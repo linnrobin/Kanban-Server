@@ -1,6 +1,8 @@
 const { User } = require('../models')
 const { decryptPass } = require('../helpers/bcrypt')
 const { generateToken } = require('../helpers/jwt')
+const { OAuth2Client } = require('google-auth-library')
+
 
 class Controller {
     static register (req, res, next ) {
@@ -40,12 +42,72 @@ class Controller {
                             access_token: token
                         })
                     } else {
-                        console.log('Invalid Email / Password')
-                        return next(err)
+                        return next({
+                            name: 'BadRequest',
+                            errors: [{ message: 'Invalid Email / Password' }]
+                        })
                     }
                 } else {
-                    console.log('User Not found')
-                    return next(err)
+                    return next({
+                        name: 'NotFound',
+                        errors: [{ message: 'User Not found' }]
+                    })
+                }
+            })
+            .catch( err => {
+                return next({
+                    name: 'InternalServerError',
+                    errors: err
+                })
+            })
+    }
+
+    static googleSign(req, res, next){
+        let email = ''
+        const client = new OAuth2Client(process.env.CLIENT_ID);
+
+        client.verifyIdToken({
+            id_token: req.body.id_token,
+            audience: process.env.CLIENT_ID
+        })
+            .then( ticket => {
+                email = ticket.getPayload().email
+                return User.findOne({
+                    where: {
+                        email
+                    }
+                })
+            })
+            .then( data => {
+                if (data) {
+                    let payload = {
+                        id: data.id,
+                        email: data.email
+                    }
+                    let token = generateToken(payload)
+                    return res.status(200).json({
+                        'access_token' : token,
+                        msg: 'Welcome Back, ' + data.email
+                    })
+                } else {
+                    return User.create({
+                        email,
+                        password: processs.env.DEFAULT_PASSWORD
+                    })
+                        .then( newCreate => {
+                            let payload = {
+                                id: newCreate.id,
+                                email: newCreate.email
+                            }
+                            let token = generateToken(payload)
+                            return res.status(201).json({
+                                'access_token': token,
+                                "msg": "First Time Google Sign In Successful, Email created in database"
+                            })
+                        })
+                        .catch( err => {
+                            return next(err)
+                        })
                 }
             })
             .catch( err => {
