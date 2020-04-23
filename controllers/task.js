@@ -49,8 +49,14 @@ class Controller {
     }
 
     static put( req, res, next ){
-        let { category } = req.body
-        let newUpdated = { category }
+        let newUpdated = {}
+        if (req.body.category) {
+            let { category } = req.body
+            newUpdated = { category }
+        } else if (req.body.title) {
+            let { title } = req.body
+            newUpdated = { title }
+        }
         Task.update(newUpdated, { 
             where: {
                 id: req.params.id
@@ -59,8 +65,7 @@ class Controller {
         })
             .then( result => {
                 return res.status(200).json({
-                    result,
-                    message: 'Successfully moved category'
+                    result
                 })
             })
             .catch( err => {
